@@ -1,0 +1,152 @@
+# Configuración de Nginx para el HOST (no para el contenedor)
+# Este archivo debe copiarse a /etc/nginx/sites-available/tiendanube-mcp
+# y luego crear un symlink en /etc/nginx/sites-enabled/
+#
+# Instrucciones:
+# 1. Copiar este archivo: sudo cp nginx-host.conf.example /etc/nginx/sites-available/tiendanube-mcp
+# 2. Editar el archivo: sudo nano /etc/nginx/sites-available/tiendanube-mcp
+# 3. Actualizar server_name con tu dominio
+# 4. Crear symlink: sudo ln -s /etc/nginx/sites-available/tiendanube-mcp /etc/nginx/sites-enabled/
+# 5. Verificar configuración: sudo nginx -t
+# 6. Recargar nginx: sudo systemctl reload nginx
+
+# Upstream - apunta al contenedor Docker
+# El contenedor expone el puerto 8000 interno en 127.0.0.1:8001 del host
+upstream mcp_backend {
+    least_conn;
+    # IMPORTANTE: El contenedor está expuesto en localhost:8001
+    server 127.0.0.1:8001 max_fails=3 fail_timeout=30s;
+    keepalive 32;
+}
+
+# Si necesitas acceder al contenedor por nombre, puedes usar:
+# - docker network inspect mcp-tienda_nube_tiendanube-network | grep Gateway
+# - O configurar un proxy_pass directo al contenedor usando su IP
+
+# HTTP redirect to HTTPS
+server {
+    listen 80;
+    server_name tu_dominio.com www.tu_dominio.com;
+    # O usar _ para aceptar cualquier dominio:
+    # server_name _;
+    
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+    
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+# HTTPS server
+server {
+    listen 443 ssl http2;
+    server_name tu_dominio.com www.tu_dominio.com;
+    # O usar _ para aceptar cualquier dominio:
+    # server_name _;
+
+    # SSL certificates (ajustar rutas según tu configuración)
+    ssl_certificate /etc/letsencrypt/live/tu_dominio.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/tu_dominio.com/privkey.pem;
+    # O si usas certificados autofirmados del contenedor:
+    # ssl_certificate /ruta/a/MCP-tienda_nube/ssl/cert.pem;
+    # ssl_certificate_key /ruta/a/MCP-tienda_nube/ssl/key.pem;
+
+    # SSL configuration
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+    ssl_prefer_server_ciphers on;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_timeout 10m;
+
+    # Security headers
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    add_header Referrer-Policy "no-referrer-when-downgrade" always;
+    add_header Content-Security-Policy "default-src 'self' http: https: data: blob: 'unsafe-inline'" always;
+
+    # Rate limiting
+    limit_req_zone $binary_remote_addr zone=api_limit:10m rate=10r/s;
+    limit_req_zone $binary_remote_addr zone=general_limit:10m rate=30r/s;
+
+    # Root location
+    location / {
+        limit_req zone=general_limit burst=50 nodelay;
+        
+        proxy_pass http://mcp_backend;
+        proxy_http_version 1.1;
+        
+        # Headers
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host $server_name;
+        
+        # Connection
+        proxy_set_header Connection "";
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+        
+        # Buffering
+        proxy_buffering on;
+        proxy_buffer_size 4k;
+        proxy_buffers 8 4k;
+        proxy_busy_buffers_size 8k;
+    }
+
+    # API endpoints con rate limiting más estricto
+    location /tools/ {
+        limit_req zone=api_limit burst=20 nodelay;
+        
+        proxy_pass http://mcp_backend;
+        proxy_http_version 1.1;
+        
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Connection "";
+    }
+
+    # Health check endpoint
+    location /health {
+        access_log off;
+        proxy_pass http://mcp_backend;
+        proxy_http_version 1.1;
+        proxy_set_header Connection "";
+    }
+
+    # Documentación
+    location /docs {
+        proxy_pass http://mcp_backend;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /redoc {
+        proxy_pass http://mcp_backend;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /openapi.json {
+        proxy_pass http://mcp_backend;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+

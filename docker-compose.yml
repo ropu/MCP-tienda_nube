@@ -1,14 +1,15 @@
-version: '3.8'
-
 services:
   # Servidor MCP HTTP (FastAPI) - Expone MCP vía HTTP
+  # NOTA: Expone puerto 8001 en localhost para que nginx del host haga proxy
+  # Si ya tienes algo en 8000, este contenedor usa 8001
   mcp-server:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: tiendanube-mcp-server
+    # Exponer solo en localhost con puerto alternativo para evitar conflictos
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8001:8000"
     environment:
       - PYTHONUNBUFFERED=1
       - LOG_LEVEL=info
@@ -30,25 +31,6 @@ services:
       - "com.tiendanube.version=2.0.0"
     # Usar app_complete.py que tiene todos los endpoints
     command: ["python", "app_complete.py"]
-
-  # Nginx Reverse Proxy (Opcional - para producción)
-  nginx:
-    image: nginx:alpine
-    container_name: tiendanube-mcp-nginx
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./ssl:/etc/nginx/ssl:ro
-      - ./logs/nginx:/var/log/nginx
-    depends_on:
-      - mcp-server
-    restart: unless-stopped
-    networks:
-      - tiendanube-network
-    labels:
-      - "com.tiendanube.description=Nginx Reverse Proxy"
 
 networks:
   tiendanube-network:

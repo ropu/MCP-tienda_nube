@@ -2,7 +2,63 @@
 
 Servidor HTTP FastAPI que expone el MCP de Tienda Nube como una API REST, listo para desplegar en VPS con Docker.
 
-## 🚀 Inicio Rápido
+## ⚠️ IMPORTANTE: Si ya tienes Nginx corriendo en el host
+
+Si tu VPS ya tiene Nginx instalado y corriendo (puertos 80/443 en uso), el contenedor Docker **NO** expondrá esos puertos para evitar conflictos. En su lugar:
+
+1. **El contenedor expone el puerto 8000 en `127.0.0.1:8001`** (solo accesible desde localhost)
+2. **Debes configurar tu Nginx del host** para hacer proxy al contenedor
+
+### Configuración rápida con Nginx del host:
+
+```bash
+# 1. Iniciar el contenedor Docker
+./deploy.sh build
+./deploy.sh start
+
+# 2. Configurar Nginx del host automáticamente
+./setup-nginx-host.sh tu_dominio.com
+# O sin dominio específico:
+./setup-nginx-host.sh
+
+# 3. Editar la configuración si es necesario
+sudo nano /etc/nginx/sites-available/tiendanube-mcp
+
+# 4. Verificar y recargar Nginx
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+### Configuración manual:
+
+1. Copia el archivo de ejemplo:
+   ```bash
+   sudo cp nginx-host.conf.example /etc/nginx/sites-available/tiendanube-mcp
+   ```
+
+2. Edita la configuración:
+   ```bash
+   sudo nano /etc/nginx/sites-available/tiendanube-mcp
+   ```
+   - Actualiza `server_name` con tu dominio
+   - Ajusta las rutas de certificados SSL si es necesario
+
+3. Crea el symlink:
+   ```bash
+   sudo ln -s /etc/nginx/sites-available/tiendanube-mcp /etc/nginx/sites-enabled/
+   ```
+
+4. Verifica y recarga:
+   ```bash
+   sudo nginx -t
+   sudo systemctl reload nginx
+   ```
+
+El contenedor estará accesible a través de tu Nginx del host en los puertos 80/443.
+
+---
+
+## 🚀 Inicio Rápido (Sin Nginx en el host)
 
 ### Opción 1: Usando el script de deployment
 
@@ -59,7 +115,9 @@ tiendanube_mcp/
 ├── api_database.json         # Base de datos de documentación
 ├── Dockerfile                # Configuración Docker
 ├── docker-compose.yml        # Orquestación de servicios
-├── nginx.conf               # Configuración de Nginx
+├── nginx.conf               # Configuración de Nginx (para contenedor)
+├── nginx-host.conf.example   # Configuración de Nginx para el HOST
+├── setup-nginx-host.sh       # Script para configurar Nginx del host
 ├── deploy.sh                # Script de deployment
 ├── Makefile                 # Comandos útiles
 ├── requirements.txt         # Dependencias Python
@@ -71,13 +129,21 @@ tiendanube_mcp/
 
 ## 🌐 Acceso
 
-Una vez iniciado, accede a:
+### Si usas Nginx del host:
+Una vez configurado el Nginx del host, accede a través de tu dominio:
+- **API**: `https://tu_dominio.com/`
+- **Documentación**: `https://tu_dominio.com/docs`
+- **ReDoc**: `https://tu_dominio.com/redoc`
+- **Health Check**: `https://tu_dominio.com/health`
+- **Info**: `https://tu_dominio.com/info`
 
-- **API**: `http://localhost/`
-- **Documentación**: `http://localhost/docs`
-- **ReDoc**: `http://localhost/redoc`
-- **Health Check**: `http://localhost/health`
-- **Info**: `http://localhost/info`
+### Si NO usas Nginx del host (solo contenedor):
+El contenedor expone el puerto en `127.0.0.1:8001` (solo localhost):
+- **API**: `http://localhost:8001/`
+- **Documentación**: `http://localhost:8001/docs`
+- **ReDoc**: `http://localhost:8001/redoc`
+- **Health Check**: `http://localhost:8001/health`
+- **Info**: `http://localhost:8001/info`
 
 ## 🔧 Comandos Disponibles
 
@@ -123,6 +189,8 @@ docker-compose ps
 
 ## 📊 Estructura de Servicios
 
+### Con Nginx del host (recomendado para producción):
+
 ```
 ┌─────────────────────────────────────────┐
 │          Cliente (Cursor, etc)          │
@@ -130,15 +198,32 @@ docker-compose ps
                      │
                      ▼
         ┌────────────────────────┐
-        │   Nginx (Puerto 80/443)│
+        │  Nginx del HOST        │
+        │  (Puerto 80/443)       │
         │  - Reverse Proxy       │
         │  - SSL/TLS             │
         │  - Rate Limiting       │
         └────────────┬───────────┘
                      │
-                     ▼
+                     ▼ (127.0.0.1:8001)
         ┌────────────────────────┐
-        │ FastAPI (Puerto 8000)  │
+        │ FastAPI (Contenedor)   │
+        │  - Servidor MCP        │
+        │  - 8 Herramientas      │
+        │  - 17 Endpoints        │
+        └────────────────────────┘
+```
+
+### Sin Nginx del host (solo contenedor):
+
+```
+┌─────────────────────────────────────────┐
+│          Cliente (Cursor, etc)          │
+└────────────────────┬────────────────────┘
+                     │
+                     ▼ (127.0.0.1:8001)
+        ┌────────────────────────┐
+        │ FastAPI (Contenedor)   │
         │  - Servidor MCP        │
         │  - 8 Herramientas      │
         │  - 17 Endpoints        │
@@ -281,11 +366,43 @@ nano .env
 
 ### Puerto en uso
 
+Si ya tienes Nginx corriendo en el host, esto es normal. El contenedor usa `127.0.0.1:8001` para evitar conflictos:
+
 ```bash
+# Verificar qué está usando los puertos
 sudo lsof -i :80
 sudo lsof -i :443
 sudo lsof -i :8000
+sudo lsof -i :8001
+
+# Si el puerto 8001 está en uso, puedes cambiarlo en docker-compose.yml
+# Cambia "127.0.0.1:8001:8000" a "127.0.0.1:8002:8000" (o el puerto que prefieras)
 ```
+
+### Error: "port is already allocated"
+
+Si ves este error al iniciar:
+```
+Error: Bind for 0.0.0.0:8000 failed: port is already allocated
+```
+
+**Solución**: El `docker-compose.yml` ya está configurado para usar `127.0.0.1:8001` en lugar de `8000`. Si aún tienes problemas:
+
+1. Verifica que el puerto 8001 esté libre:
+   ```bash
+   sudo lsof -i :8001
+   ```
+
+2. Si está en uso, cambia el puerto en `docker-compose.yml`:
+   ```yaml
+   ports:
+     - "127.0.0.1:8002:8000"  # Cambia 8001 a 8002 o cualquier puerto libre
+   ```
+
+3. Actualiza `nginx-host.conf.example` para usar el nuevo puerto:
+   ```nginx
+   server 127.0.0.1:8002 max_fails=3 fail_timeout=30s;
+   ```
 
 ### Contenedor no inicia
 

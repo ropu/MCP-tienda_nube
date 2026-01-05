@@ -214,9 +214,9 @@ health() {
     
     print_info "Realizando health check..."
     
-    if curl -f http://localhost:8000/health &> /dev/null; then
+    if curl -f http://localhost:8001/health &> /dev/null; then
         print_success "Servidor MCP está funcionando correctamente"
-        curl -s http://localhost:8000/health | python -m json.tool
+        curl -s http://localhost:8001/health | python -m json.tool
     else
         print_error "El servidor MCP no está respondiendo"
         exit 1
@@ -229,8 +229,8 @@ info() {
     
     print_info "Realizando consulta de información..."
     
-    if curl -f http://localhost:8000/info &> /dev/null; then
-        curl -s http://localhost:8000/info | python -m json.tool
+    if curl -f http://localhost:8001/info &> /dev/null; then
+        curl -s http://localhost:8001/info | python -m json.tool
     else
         print_error "No se puede conectar al servidor"
         exit 1

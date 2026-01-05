@@ -1,0 +1,578 @@
+{
+  "metadata": {
+    "api_name": "Tienda Nube / Nuvemshop API",
+    "version": "2025-03",
+    "base_url": "https://api.tiendanube.com/v1",
+    "documentation_url": "https://tiendanube.github.io/api-documentation/",
+    "note": "Nueva API de Productos con soporte multi-inventario. Se recomienda usar esta versión para nuevo desarrollo."
+  },
+  "endpoints": {
+    "products": [
+      {
+        "method": "GET",
+        "path": "/products",
+        "name": "List Products",
+        "description": "Obtener lista de todos los productos. Máximo 30 resultados por defecto.",
+        "parameters": {
+          "ids": {
+            "type": "string",
+            "description": "Hasta 30 IDs separados por comas",
+            "example": "1234,5678,9012"
+          },
+          "since_id": {
+            "type": "integer",
+            "description": "Resultados después de ID especificado",
+            "example": 1000
+          },
+          "language": {
+            "type": "string",
+            "description": "Idioma de búsqueda",
+            "example": "es"
+          },
+          "q": {
+            "type": "string",
+            "description": "Búsqueda por nombre, tags o SKU",
+            "example": "Master Ball"
+          },
+          "handle": {
+            "type": "string",
+            "description": "Productos con URL específica",
+            "example": "master-ball"
+          },
+          "category_id": {
+            "type": "integer",
+            "description": "ID de categoría",
+            "example": 4567
+          },
+          "published": {
+            "type": "boolean",
+            "description": "Filtrar por estado publicado",
+            "example": true
+          },
+          "free_shipping": {
+            "type": "boolean",
+            "description": "Filtrar por envío gratis",
+            "example": false
+          },
+          "max_stock": {
+            "type": "integer",
+            "description": "Productos con stock menor o igual",
+            "example": 100
+          },
+          "min_stock": {
+            "type": "integer",
+            "description": "Productos con stock mayor o igual",
+            "example": 5
+          },
+          "has_promotional_price": {
+            "type": "boolean",
+            "description": "Productos con precio promocional",
+            "example": true
+          },
+          "created_at_min": {
+            "type": "string",
+            "description": "Fecha mínima de creación (ISO 8601)",
+            "example": "2024-01-01T00:00:00-03:00"
+          },
+          "created_at_max": {
+            "type": "string",
+            "description": "Fecha máxima de creación (ISO 8601)",
+            "example": "2024-12-31T23:59:59-03:00"
+          },
+          "sort_by": {
+            "type": "string",
+            "description": "Criterio de ordenamiento",
+            "enum": ["user", "price-ascending", "price-descending", "alpha-ascending", "alpha-descending", "created-at-ascending", "created-at-descending", "best-selling"],
+            "example": "price-ascending"
+          },
+          "page": {
+            "type": "integer",
+            "description": "Número de página",
+            "example": 1
+          },
+          "per_page": {
+            "type": "integer",
+            "description": "Cantidad de resultados por página",
+            "example": 30
+          },
+          "fields": {
+            "type": "string",
+            "description": "Campos a incluir (separados por comas)",
+            "example": "id,name,price,stock"
+          }
+        },
+        "response_schema": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {"type": "integer"},
+              "name": {"type": "object", "description": "Nombres en cada idioma"},
+              "description": {"type": "object", "description": "Descripciones HTML en cada idioma"},
+              "handle": {"type": "object", "description": "URLs amigables en cada idioma"},
+              "variants": {"type": "array", "description": "Variantes del producto"},
+              "images": {"type": "array", "description": "Imágenes del producto"},
+              "categories": {"type": "array", "description": "IDs de categorías"},
+              "brand": {"type": ["string", "null"]},
+              "published": {"type": "boolean"},
+              "free_shipping": {"type": "boolean"},
+              "video_url": {"type": ["string", "null"]},
+              "seo_title": {"type": "string"},
+              "seo_description": {"type": "string"},
+              "attributes": {"type": "array"},
+              "tags": {"type": "string"},
+              "created_at": {"type": "string", "format": "iso8601"},
+              "updated_at": {"type": "string", "format": "iso8601"}
+            }
+          }
+        },
+        "code_examples": {
+          "python": "import requests\n\nheaders = {'Authorization': 'Bearer YOUR_TOKEN'}\nparams = {'page': 1, 'per_page': 30, 'sort_by': 'price-ascending'}\nresponse = requests.get('https://api.tiendanube.com/v1/products', headers=headers, params=params)\nproducts = response.json()\nprint(products)",
+          "javascript": "const response = await fetch('https://api.tiendanube.com/v1/products?page=1&per_page=30&sort_by=price-ascending', {\n  headers: {'Authorization': 'Bearer YOUR_TOKEN'}\n});\nconst products = await response.json();\nconsole.log(products);"
+        }
+      },
+      {
+        "method": "GET",
+        "path": "/products/{id}",
+        "name": "Get Product",
+        "description": "Obtener producto específico por ID",
+        "parameters": {
+          "id": {
+            "type": "integer",
+            "description": "ID del producto",
+            "required": true,
+            "example": 1234
+          }
+        },
+        "response_schema": {
+          "type": "object",
+          "properties": {
+            "id": {"type": "integer"},
+            "name": {"type": "object"},
+            "description": {"type": "object"},
+            "variants": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {"type": "integer"},
+                  "sku": {"type": "string"},
+                  "price": {"type": "string"},
+                  "promotional_price": {"type": ["string", "null"]},
+                  "stock": {"type": "integer"},
+                  "inventory_levels": {
+                    "type": "array",
+                    "description": "NUEVO: Niveles de inventario por ubicación",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "location_id": {"type": "string"},
+                        "stock": {"type": "integer"}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "code_examples": {
+          "python": "import requests\n\nheaders = {'Authorization': 'Bearer YOUR_TOKEN'}\nproduct_id = 1234\nresponse = requests.get(f'https://api.tiendanube.com/v1/products/{product_id}', headers=headers)\nproduct = response.json()\nprint(f'Producto: {product[\"name\"]}')\nfor variant in product['variants']:\n  print(f'  Variante {variant[\"sku\"]}: ${variant[\"price\"]}, Stock: {variant[\"stock\"]}')"
+        }
+      },
+      {
+        "method": "GET",
+        "path": "/products/sku/{sku}",
+        "name": "Get Product by SKU",
+        "description": "Obtener producto por SKU",
+        "parameters": {
+          "sku": {
+            "type": "string",
+            "description": "SKU del producto",
+            "required": true,
+            "example": "BSG1234A"
+          }
+        }
+      },
+      {
+        "method": "POST",
+        "path": "/products",
+        "name": "Create Product",
+        "description": "Crear nuevo producto",
+        "request_schema": {
+          "type": "object",
+          "required": ["name"],
+          "properties": {
+            "name": {
+              "type": "object",
+              "description": "Nombres en cada idioma",
+              "example": {"es": "Master Ball", "en": "Master Ball"}
+            },
+            "description": {
+              "type": "object",
+              "description": "Descripciones HTML en cada idioma"
+            },
+            "attributes": {
+              "type": "array",
+              "description": "Máximo 3 atributos",
+              "example": [{"es": "Tamaño"}]
+            },
+            "variants": {
+              "type": "array",
+              "description": "Variantes del producto",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "values": {"type": "array"},
+                  "price": {"type": "string"},
+                  "promotional_price": {"type": "string"},
+                  "cost": {"type": "string"},
+                  "sku": {"type": "string"},
+                  "inventory_levels": {
+                    "type": "array",
+                    "description": "NUEVO: Especificar stock por ubicación",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "location_id": {"type": "string"},
+                        "stock": {"type": "integer"}
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "published": {"type": "boolean"},
+            "free_shipping": {"type": "boolean"},
+            "tags": {"type": "string"}
+          }
+        },
+        "code_examples": {
+          "python": "import requests\nimport json\n\nheaders = {'Authorization': 'Bearer YOUR_TOKEN', 'Content-Type': 'application/json'}\n\nproduct_data = {\n  'name': {'es': 'Master Ball', 'en': 'Master Ball'},\n  'description': {'es': '<p>La mejor bola...</p>', 'en': '<p>The best ball...</p>'},\n  'attributes': [{'es': 'Tamaño', 'en': 'Size'}],\n  'variants': [\n    {\n      'values': [{'es': 'Pequeño', 'en': 'Small'}],\n      'price': '25.00',\n      'sku': 'MB-S',\n      'inventory_levels': [{'location_id': 'loc_123', 'stock': 100}]\n    }\n  ],\n  'published': True\n}\n\nresponse = requests.post('https://api.tiendanube.com/v1/products', \n                        headers=headers, \n                        data=json.dumps(product_data))\nproduct = response.json()\nprint(f'Producto creado: {product[\"id\"]}')"
+        }
+      },
+      {
+        "method": "PUT",
+        "path": "/products/{id}",
+        "name": "Update Product",
+        "description": "Actualizar producto completo",
+        "parameters": {
+          "id": {
+            "type": "integer",
+            "description": "ID del producto",
+            "required": true
+          }
+        }
+      },
+      {
+        "method": "DELETE",
+        "path": "/products/{id}",
+        "name": "Delete Product",
+        "description": "Eliminar producto",
+        "parameters": {
+          "id": {
+            "type": "integer",
+            "description": "ID del producto",
+            "required": true
+          }
+        }
+      },
+      {
+        "method": "PATCH",
+        "path": "/products/stock-price",
+        "name": "Update Stock and Price",
+        "description": "Actualizar stock y precio de múltiples productos. Soporta multi-inventario con location_id.",
+        "request_schema": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {"type": "integer", "description": "ID del producto"},
+              "variants": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {"type": "integer", "description": "ID de la variante"},
+                    "price": {"type": "string"},
+                    "cost": {"type": "string"},
+                    "promotional_price": {"type": "string"},
+                    "inventory_levels": {
+                      "type": "array",
+                      "description": "NUEVO: Actualizar stock por ubicación",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "location_id": {"type": "string"},
+                          "stock": {"type": "integer"}
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    ],
+    "orders": [
+      {
+        "method": "GET",
+        "path": "/orders",
+        "name": "List Orders",
+        "description": "Obtener lista de todas las órdenes. Máximo 30 resultados por defecto.",
+        "parameters": {
+          "status": {
+            "type": "string",
+            "description": "Filtrar por estado",
+            "enum": ["open", "closed", "cancelled"],
+            "example": "open"
+          },
+          "payment_status": {
+            "type": "string",
+            "description": "Filtrar por estado de pago",
+            "enum": ["authorized", "pending", "paid", "partially_paid", "abandoned", "refunded", "partially_refunded", "voided"],
+            "example": "paid"
+          },
+          "shipping_status": {
+            "type": "string",
+            "description": "Filtrar por estado de envío",
+            "example": "shipped"
+          },
+          "created_at_min": {
+            "type": "string",
+            "description": "Fecha mínima de creación (ISO 8601)",
+            "example": "2024-01-01T00:00:00-03:00"
+          },
+          "created_at_max": {
+            "type": "string",
+            "description": "Fecha máxima de creación (ISO 8601)"
+          },
+          "page": {
+            "type": "integer",
+            "description": "Número de página",
+            "example": 1
+          },
+          "per_page": {
+            "type": "integer",
+            "description": "Cantidad de resultados por página",
+            "example": 30
+          },
+          "fields": {
+            "type": "string",
+            "description": "Campos a incluir (separados por comas)"
+          },
+          "aggregates": {
+            "type": "string",
+            "description": "Incluir información adicional",
+            "example": "fulfillment_orders"
+          }
+        },
+        "response_schema": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {"type": "integer"},
+              "number": {"type": "integer"},
+              "contact_email": {"type": "string"},
+              "contact_phone": {"type": "string"},
+              "products": {"type": "array"},
+              "total": {"type": "string"},
+              "status": {"type": "string"},
+              "payment_status": {"type": "string"},
+              "shipping_status": {"type": "string"},
+              "created_at": {"type": "string", "format": "iso8601"}
+            }
+          }
+        },
+        "code_examples": {
+          "python": "import requests\n\nheaders = {'Authorization': 'Bearer YOUR_TOKEN'}\nparams = {'status': 'open', 'page': 1, 'per_page': 30}\nresponse = requests.get('https://api.tiendanube.com/v1/orders', headers=headers, params=params)\norders = response.json()\nprint(f'Total de órdenes: {len(orders)}')\nfor order in orders:\n  print(f'Orden #{order[\"number\"]}: ${order[\"total\"]} - {order[\"status\"]}')"
+        }
+      },
+      {
+        "method": "GET",
+        "path": "/orders/{id}",
+        "name": "Get Order",
+        "description": "Obtener orden específica por ID",
+        "parameters": {
+          "id": {
+            "type": "integer",
+            "description": "ID de la orden",
+            "required": true,
+            "example": 871254203
+          },
+          "aggregates": {
+            "type": "string",
+            "description": "Incluir información adicional",
+            "example": "fulfillment_orders"
+          }
+        }
+      },
+      {
+        "method": "GET",
+        "path": "/orders/{id}/history/values",
+        "name": "Get Order Value History",
+        "description": "Obtener historial de cambios de valores de una orden",
+        "parameters": {
+          "id": {
+            "type": "integer",
+            "description": "ID de la orden",
+            "required": true
+          }
+        }
+      },
+      {
+        "method": "GET",
+        "path": "/orders/{id}/history/editions",
+        "name": "Get Order Edition History",
+        "description": "Obtener historial de ediciones de una orden",
+        "parameters": {
+          "id": {
+            "type": "integer",
+            "description": "ID de la orden",
+            "required": true
+          }
+        }
+      },
+      {
+        "method": "POST",
+        "path": "/orders",
+        "name": "Create Order",
+        "description": "Crear nueva orden",
+        "request_schema": {
+          "type": "object",
+          "required": ["contact_email", "products"],
+          "properties": {
+            "contact_email": {
+              "type": "string",
+              "description": "Email del comprador",
+              "example": "customer@example.com"
+            },
+            "contact_phone": {
+              "type": "string",
+              "description": "Teléfono del comprador"
+            },
+            "contact_identification": {
+              "type": "string",
+              "description": "Identificación (CPF/CNPJ/DNI/CUIT)"
+            },
+            "billing_name": {
+              "type": "string",
+              "description": "Nombre para facturación"
+            },
+            "billing_address": {
+              "type": "string",
+              "description": "Dirección de facturación"
+            },
+            "billing_city": {
+              "type": "string",
+              "description": "Ciudad de facturación"
+            },
+            "billing_province": {
+              "type": "string",
+              "description": "Provincia de facturación"
+            },
+            "billing_country": {
+              "type": "string",
+              "description": "País de facturación"
+            },
+            "shipping_address": {
+              "type": "object",
+              "description": "Dirección de envío"
+            },
+            "products": {
+              "type": "array",
+              "description": "Productos de la orden",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "product_id": {"type": "integer"},
+                  "variant_id": {"type": "integer"},
+                  "quantity": {"type": "integer"}
+                }
+              }
+            },
+            "note": {
+              "type": "string",
+              "description": "Nota del cliente"
+            },
+            "owner_note": {
+              "type": "string",
+              "description": "Nota del propietario"
+            }
+          }
+        }
+      },
+      {
+        "method": "PUT",
+        "path": "/orders/{id}",
+        "name": "Update Order",
+        "description": "Actualizar orden"
+      },
+      {
+        "method": "POST",
+        "path": "/orders/{id}/pay",
+        "name": "Pay Order",
+        "description": "Marcar orden como pagada"
+      },
+      {
+        "method": "POST",
+        "path": "/orders/{id}/close",
+        "name": "Close Order",
+        "description": "Cerrar (archivar) una orden"
+      },
+      {
+        "method": "POST",
+        "path": "/orders/{id}/reopen",
+        "name": "Reopen Order",
+        "description": "Reabrír una orden cerrada"
+      },
+      {
+        "method": "POST",
+        "path": "/orders/{id}/cancel",
+        "name": "Cancel Order",
+        "description": "Cancelar una orden",
+        "request_schema": {
+          "type": "object",
+          "properties": {
+            "reason": {
+              "type": "string",
+              "description": "Razón de cancelación",
+              "enum": ["customer", "fraud", "inventory", "other"],
+              "example": "inventory"
+            }
+          }
+        }
+      }
+    ]
+  },
+  "important_notes": {
+    "multi_inventory": {
+      "title": "Nueva API de Productos con Multi-Inventario",
+      "description": "La API de Productos tiene una nueva versión con soporte para multi-inventario.",
+      "key_changes": [
+        "variant.stock está deprecado pero sigue siendo soportado por compatibilidad hacia atrás",
+        "Usar variant.inventory_levels para especificar stock por ubicación",
+        "Si solo se envía variant.stock, se actualiza el primer inventory_level",
+        "Si se envían ambos, variant.stock es ignorado",
+        "Endpoints afectados: GET /products, POST /products, PUT /products, PATCH /products, POST /products/variants/stock, PATCH /products/stock-price"
+      ],
+      "example": {
+        "old": {"stock": 5},
+        "new": {"inventory_levels": [{"location_id": "01GQ2ZHK064BQRHGDB7CCV0Y6N", "stock": 5}]}
+      }
+    },
+    "authentication": {
+      "type": "Bearer Token",
+      "header": "Authorization: Bearer YOUR_ACCESS_TOKEN",
+      "scopes": ["read_products", "write_products", "read_orders", "write_orders", "read_customers"]
+    },
+    "pagination": {
+      "default_per_page": 30,
+      "max_per_page": 250,
+      "parameters": ["page", "per_page"]
+    }
+  }
+}

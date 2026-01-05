@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "tiendanube-api": {
+      "command": "python3",
+      "args": [
+        "/home/ubuntu/tiendanube_mcp/server.py"
+      ],
+      "env": {
+        "PYTHONUNBUFFERED": "1"
+      }
+    }
+  }
+}

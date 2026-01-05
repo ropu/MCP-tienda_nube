@@ -1,0 +1,229 @@
+╔══════════════════════════════════════════════════════════════════════════════╗
+║         TIENDA NUBE API MCP SERVER - RESUMEN DE 17 ENDPOINTS REST           ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ CATEGORÍA: SALUD (2 endpoints)                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+  1. GET /health
+     └─ Verifica que el servidor está funcionando
+     └─ Respuesta: {"status": "ok", "service": "tiendanube-api-mcp", ...}
+
+  2. GET /ready
+     └─ Verifica que el servidor está listo (base de datos cargada)
+     └─ Respuesta: {"ready": true, "resources": {...}, "total_endpoints": 17}
+
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ CATEGORÍA: HERRAMIENTAS MCP (8 endpoints)                                   │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+  3. POST /tools/search_endpoint
+     └─ Herramienta: search_endpoint
+     └─ Parámetros: resource (requerido), method (opcional), query (opcional)
+     └─ Busca endpoints en la API por recurso, método o nombre
+
+  4. POST /tools/get_endpoint_details
+     └─ Herramienta: get_endpoint_details
+     └─ Parámetros: resource (requerido), path (requerido), method (opcional)
+     └─ Obtiene detalles completos de un endpoint
+
+  5. POST /tools/get_schema
+     └─ Herramienta: get_schema
+     └─ Parámetros: resource (requerido), endpoint_type (opcional)
+     └─ Obtiene esquemas JSON de solicitud/respuesta
+
+  6. POST /tools/search_documentation
+     └─ Herramienta: search_documentation
+     └─ Parámetros: query (requerido)
+     └─ Busca en la documentación por palabras clave
+
+  7. POST /tools/get_code_example
+     └─ Herramienta: get_code_example
+     └─ Parámetros: resource, path, method (opcional), language (opcional)
+     └─ Obtiene ejemplos de código en Python o JavaScript
+
+  8. POST /tools/get_authentication_info
+     └─ Herramienta: get_authentication_info
+     └─ Parámetros: Ninguno
+     └─ Información sobre autenticación Bearer Token
+
+  9. POST /tools/get_multi_inventory_info
+     └─ Herramienta: get_multi_inventory_info
+     └─ Parámetros: Ninguno
+     └─ Información sobre nueva API de multi-inventario
+
+  10. POST /tools/list_resources
+      └─ Herramienta: list_resources
+      └─ Parámetros: Ninguno
+      └─ Lista todos los recursos disponibles
+
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ CATEGORÍA: INFORMACIÓN (5 endpoints)                                        │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+  11. GET /
+      └─ Endpoint raíz con información general
+
+  12. GET /info
+      └─ Información detallada del servidor
+
+  13. GET /endpoints
+      └─ Lista de todos los endpoints (filtrable por recurso)
+
+  14. GET /tools
+      └─ Definición de todas las herramientas MCP
+
+  15. GET /openapi.json
+      └─ Esquema OpenAPI 3.0 completo
+
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ CATEGORÍA: DOCUMENTACIÓN (2 endpoints)                                      │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+  16. GET /docs
+      └─ Interfaz Swagger UI interactiva
+
+  17. GET /redoc
+      └─ Documentación ReDoc
+
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                              TABLA RESUMEN                                   ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+┏━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ # ┃ Endpoint                        ┃ Método ┃ Herramienta MCP             ┃
+┡━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ 1 │ /health                         │ GET    │ N/A (Sistema)               │
+│ 2 │ /ready                          │ GET    │ N/A (Sistema)               │
+│ 3 │ /tools/search_endpoint          │ POST   │ search_endpoint             │
+│ 4 │ /tools/get_endpoint_details     │ POST   │ get_endpoint_details        │
+│ 5 │ /tools/get_schema               │ POST   │ get_schema                  │
+│ 6 │ /tools/search_documentation     │ POST   │ search_documentation        │
+│ 7 │ /tools/get_code_example         │ POST   │ get_code_example            │
+│ 8 │ /tools/get_authentication_info  │ POST   │ get_authentication_info     │
+│ 9 │ /tools/get_multi_inventory_info │ POST   │ get_multi_inventory_info    │
+│10 │ /tools/list_resources           │ POST   │ list_resources              │
+│11 │ /                               │ GET    │ N/A (Información)           │
+│12 │ /info                           │ GET    │ N/A (Información)           │
+│13 │ /endpoints                      │ GET    │ N/A (Información)           │
+│14 │ /tools                          │ GET    │ N/A (Información)           │
+│15 │ /openapi.json                   │ GET    │ N/A (Información)           │
+│16 │ /docs                           │ GET    │ N/A (Documentación)         │
+│17 │ /redoc                          │ GET    │ N/A (Documentación)         │
+└───┴─────────────────────────────────┴────────┴─────────────────────────────┘
+
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                        ESTADÍSTICAS POR CATEGORÍA                            ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+  Salud                    2 endpoints (11.8%)
+  Herramientas MCP         8 endpoints (47.1%)
+  Información              5 endpoints (29.4%)
+  Documentación            2 endpoints (11.8%)
+  ────────────────────────────────────────
+  TOTAL                   17 endpoints (100%)
+
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                      MÉTODOS HTTP UTILIZADOS                                ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+  GET   9 endpoints (53%)
+  POST  8 endpoints (47%)
+
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                    EJEMPLOS DE USO RÁPIDO                                    ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+1. Verificar salud del servidor:
+   $ curl http://localhost:8000/health
+
+2. Obtener información del servidor:
+   $ curl http://localhost:8000/info
+
+3. Buscar endpoints de productos:
+   $ curl -X POST "http://localhost:8000/tools/search_endpoint?resource=products"
+
+4. Obtener detalles de un endpoint:
+   $ curl -X POST "http://localhost:8000/tools/get_endpoint_details?resource=products&path=/products"
+
+5. Obtener ejemplo de código:
+   $ curl -X POST "http://localhost:8000/tools/get_code_example?resource=products&path=/products&language=python"
+
+6. Obtener información de multi-inventario:
+   $ curl -X POST "http://localhost:8000/tools/get_multi_inventory_info"
+
+7. Acceder a documentación interactiva:
+   http://localhost:8000/docs
+
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                        FLUJO TÍPICO DE USO                                   ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+  Cliente (Cursor)
+       │
+       ├─→ POST /tools/search_endpoint
+       │   (Buscar endpoint relevante)
+       │
+       ├─→ POST /tools/get_endpoint_details
+       │   (Obtener parámetros y esquema)
+       │
+       ├─→ POST /tools/get_schema
+       │   (Validar estructura de datos)
+       │
+       └─→ POST /tools/get_code_example
+           (Obtener código para implementar)
+
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                      CARACTERÍSTICAS PRINCIPALES                             ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+  ✓ 8 herramientas MCP expuestas como endpoints REST
+  ✓ 17 endpoints totales (salud, herramientas, información, documentación)
+  ✓ Documentación automática en /docs (Swagger UI)
+  ✓ Esquema OpenAPI 3.0 en /openapi.json
+  ✓ Health checks para monitoreo
+  ✓ Rate limiting en Nginx
+  ✓ CORS habilitado
+  ✓ Logging estructurado
+
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                         SEGURIDAD Y LÍMITES                                  ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+  Rate Limiting:
+    • Endpoints generales: 30 req/s por IP
+    • Endpoints de herramientas: 10 req/s por IP
+    • Health check: Sin límite
+
+  Autenticación:
+    • No requerida para acceder al MCP
+    • Requerida para usar la API de Tienda Nube (Bearer Token)
+
+  CORS:
+    • Habilitado para todos los orígenes (*)
+    • Configurable en .env
+
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                    INFORMACIÓN DE VERSIÓN                                    ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+  Versión del MCP:     1.0.0
+  Versión de API:      v1
+  Total Endpoints:     17
+  Total Herramientas:  8
+  Recursos:           2 (products, orders)
+  Última actualización: 2025-01-04
+  Estado:             ✓ Listo para producción
+

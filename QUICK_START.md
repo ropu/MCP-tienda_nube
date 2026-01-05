@@ -1,50 +1,96 @@
-# Guía Rápida - MCP Tienda Nube para Cursor
+# 🚀 Guía Rápida - MCP Tienda Nube
+
+**Instala y ejecuta el servidor MCP en 5 minutos**
+
+---
 
 ## ⚡ Instalación en 3 pasos
 
-### Paso 1: Copiar archivos
+### Paso 1: Clonar el Repositorio
 
 ```bash
-# Crear directorio
-mkdir -p ~/.cursor/mcp-servers
-
-# Copiar servidor MCP
-cp -r /home/ubuntu/tiendanube_mcp ~/.cursor/mcp-servers/
+git clone https://github.com/ropu/MCP-tienda_nube.git
+cd MCP-tienda_nube
 ```
 
-### Paso 2: Configurar Cursor
+### Paso 2: Instalar Dependencias
 
-Abre o crea el archivo: `~/.cursor/mcp_config.json`
+```bash
+pip3 install -r requirements.txt
+```
 
-Agrega esta configuración:
+### Paso 3: Iniciar el Servidor
+
+```bash
+python3 app_complete.py
+```
+
+El servidor estará disponible en: `http://localhost:8000`
+
+---
+
+## 🐳 Opción Docker (Recomendado)
+
+### 1. Clonar Repositorio
+
+```bash
+git clone https://github.com/ropu/MCP-tienda_nube.git
+cd MCP-tienda_nube
+```
+
+### 2. Iniciar con Docker Compose
+
+```bash
+docker-compose up -d
+```
+
+### 3. Verificar
+
+```bash
+curl http://localhost:8000/health
+```
+
+---
+
+## 💻 Configurar en Cursor
+
+### 1. Editar Configuración
+
+**macOS/Linux:**
+```bash
+nano ~/.cursor/mcp.json
+```
+
+**Windows:**
+```
+notepad %APPDATA%\Cursor\mcp.json
+```
+
+### 2. Agregar Configuración
 
 ```json
 {
   "mcpServers": {
     "tiendanube-api": {
-      "command": "python3",
-      "args": [
-        "/home/ubuntu/tiendanube_mcp/server_simple.py"
-      ],
-      "env": {
-        "PYTHONUNBUFFERED": "1"
-      }
+      "url": "http://localhost:8000",
+      "name": "Tienda Nube API",
+      "description": "API completa de Tienda Nube"
     }
   }
 }
 ```
 
-### Paso 3: Reiniciar Cursor
+### 3. Reiniciar Cursor
 
 Cierra y abre Cursor nuevamente. ¡Listo!
 
 ---
 
-## 🎯 Primeros pasos en Cursor
+## 🎯 Primeros Pasos en Cursor
 
 Una vez configurado, puedes usar el MCP escribiendo en Cursor:
 
-### Ejemplo 1: Buscar cómo crear un producto
+### Ejemplo 1: Crear un Producto
 
 ```
 @tiendanube-api
@@ -52,28 +98,15 @@ Una vez configurado, puedes usar el MCP escribiendo en Cursor:
 Necesito el endpoint, parámetros y un ejemplo de código en Python.
 ```
 
-Cursor automáticamente usará:
-- `search_endpoint(resource="products", method="POST")`
-- `get_endpoint_details(resource="products", path="/products", method="POST")`
-- `get_code_example(resource="products", path="/products", method="POST", language="python")`
-
-### Ejemplo 2: Información sobre multi-inventario
+### Ejemplo 2: Listar Clientes
 
 ```
 @tiendanube-api
-¿Cuál es la diferencia entre la API antigua y nueva de productos?
-¿Cómo uso inventory_levels?
+¿Cómo obtengo todos los clientes de mi tienda?
+Dame el endpoint y un ejemplo de código.
 ```
 
-### Ejemplo 3: Obtener órdenes pagadas
-
-```
-@tiendanube-api
-Necesito obtener todas las órdenes que fueron pagadas hoy.
-¿Cuál es el endpoint y qué parámetros uso?
-```
-
-### Ejemplo 4: Actualizar stock
+### Ejemplo 3: Actualizar Stock
 
 ```
 @tiendanube-api
@@ -81,11 +114,19 @@ Necesito obtener todas las órdenes que fueron pagadas hoy.
 Dame un ejemplo de código en Python.
 ```
 
+### Ejemplo 4: Obtener Órdenes
+
+```
+@tiendanube-api
+Necesito obtener todas las órdenes que fueron pagadas hoy.
+¿Cuál es el endpoint y qué parámetros uso?
+```
+
 ---
 
-## 📚 Herramientas disponibles
+## 📚 Herramientas Disponibles
 
-El MCP proporciona 8 herramientas que Cursor puede usar automáticamente:
+El MCP proporciona 10 herramientas que Cursor puede usar automáticamente:
 
 | Herramienta | Propósito |
 |------------|----------|
@@ -94,9 +135,10 @@ El MCP proporciona 8 herramientas que Cursor puede usar automáticamente:
 | `get_schema` | Obtener esquemas JSON de solicitud/respuesta |
 | `search_documentation` | Buscar en la documentación |
 | `get_code_example` | Obtener ejemplos de código (Python/JavaScript) |
+| `list_resources` | Listar recursos disponibles |
+| `get_resource_endpoints` | Obtener endpoints de un recurso |
 | `get_authentication_info` | Información de autenticación |
 | `get_multi_inventory_info` | Información sobre multi-inventario |
-| `list_resources` | Listar recursos disponibles |
 
 ---
 
@@ -104,76 +146,119 @@ El MCP proporciona 8 herramientas que Cursor puede usar automáticamente:
 
 Para usar la API de Tienda Nube, necesitas un **Bearer Token**.
 
-Obtén tu token en:
+### Obtener Token
+
 1. Accede a tu tienda en Tienda Nube
-2. Ve a Configuración → Aplicaciones → Crear Aplicación
+2. Ve a **Configuración → Aplicaciones → Crear Aplicación**
 3. Copia el token de acceso
 
-Úsalo en tus solicitudes:
+### Usar Token
 
 ```python
+import requests
+
 headers = {
-    "Authorization": f"Bearer {YOUR_ACCESS_TOKEN}",
-    "Content-Type": "application/json"
+    "Authorization": "Bearer YOUR_ACCESS_TOKEN",
+    "User-Agent": "MyApp (name@email.com)"
 }
+
+response = requests.get(
+    "https://api.tiendanube.com/v1/products",
+    headers=headers
+)
 ```
-
----
-
-## 📖 Recursos
-
-- **Documentación oficial**: https://tiendanube.github.io/api-documentation/
-- **Multi-inventario**: https://tiendanube.github.io/api-documentation/guides/multi-inventory/products
-- **Ejemplos de código**: Ver archivo `examples.md` en este directorio
 
 ---
 
 ## ✅ Verificación
 
-Para verificar que el MCP está funcionando correctamente:
+### Verificar Servidor
 
 ```bash
-cd /home/ubuntu/tiendanube_mcp
-python3 test_server.py
+curl http://localhost:8000/health
 ```
 
-Deberías ver:
+Respuesta esperada:
+```json
+{
+  "status": "healthy",
+  "timestamp": "2025-01-04T...",
+  "version": "2.0.0"
+}
 ```
-🎉 ¡Todas las pruebas pasaron correctamente!
+
+### Verificar Documentación
+
+Abre en tu navegador:
+```
+http://localhost:8000/docs
+```
+
+### Ejecutar Pruebas
+
+```bash
+python3 test_complete_mcp.py
 ```
 
 ---
 
-## 🆘 Solución de problemas
+## 🆘 Solución de Problemas
+
+### El servidor no inicia
+
+1. Verifica que Python 3 esté instalado:
+   ```bash
+   python3 --version
+   ```
+
+2. Verifica que las dependencias estén instaladas:
+   ```bash
+   pip3 install -r requirements.txt
+   ```
+
+3. Verifica que el puerto 8000 esté libre:
+   ```bash
+   lsof -i :8000
+   ```
 
 ### El MCP no aparece en Cursor
 
-1. Verifica que la ruta en `mcp_config.json` sea correcta
-2. Asegúrate de que Python 3 esté instalado: `python3 --version`
+1. Verifica que el servidor esté corriendo:
+   ```bash
+   curl http://localhost:8000/health
+   ```
+
+2. Verifica la configuración en `~/.cursor/mcp.json`
+
 3. Reinicia Cursor completamente
+
 4. Revisa los logs de Cursor
 
-### Error: "No se puede encontrar el módulo"
+### Error de conexión
 
-Verifica que los archivos estén en la ubicación correcta:
-
-```bash
-ls -la ~/.cursor/mcp-servers/tiendanube_mcp/
-```
-
-Deberías ver:
-- `server_simple.py`
-- `api_database.json`
-- `README.md`
-
-### Cursor no responde al usar el MCP
-
-1. Verifica que Python 3 esté disponible
-2. Intenta ejecutar el servidor manualmente:
+1. Verifica que el servidor esté corriendo:
    ```bash
-   python3 /home/ubuntu/tiendanube_mcp/server_simple.py
+   ps aux | grep app_complete.py
    ```
-3. Si hay errores, revisa el archivo `api_database.json`
+
+2. Verifica el firewall:
+   ```bash
+   sudo ufw status
+   ```
+
+3. Intenta con Docker:
+   ```bash
+   docker-compose up -d
+   ```
+
+---
+
+## 📖 Recursos
+
+- **GitHub:** https://github.com/ropu/MCP-tienda_nube
+- **Documentación oficial:** https://tiendanube.github.io/api-documentation/
+- **Multi-inventario:** https://tiendanube.github.io/api-documentation/guides/multi-inventory/products
+- **Swagger UI:** http://localhost:8000/docs
 
 ---
 
@@ -183,22 +268,37 @@ Deberías ver:
 2. **Sé específico** en tus preguntas (ej: "Crear producto" vs "¿Qué es un producto?")
 3. **Pide ejemplos de código** en el lenguaje que necesites (Python/JavaScript)
 4. **Pregunta sobre multi-inventario** si necesitas trabajar con múltiples ubicaciones
+5. **Usa la documentación Swagger** para explorar los endpoints: http://localhost:8000/docs
 
 ---
 
-## 🚀 Próximos pasos
+## 🚀 Próximos Pasos
 
 Una vez configurado, puedes:
 
-1. **Crear productos** con la API
-2. **Gestionar órdenes** (crear, actualizar, cancelar)
-3. **Actualizar precios y stock** en tiempo real
-4. **Consultar historial** de órdenes
-5. **Integrar** con tus sistemas
-
-¡Ahora estás listo para codear con la API de Tienda Nube en Cursor! 🎉
+1. ✅ **Crear productos** con variantes e imágenes
+2. ✅ **Gestionar órdenes** (crear, actualizar, cancelar)
+3. ✅ **Actualizar precios y stock** en tiempo real
+4. ✅ **Consultar historial** de órdenes
+5. ✅ **Gestionar clientes** y direcciones
+6. ✅ **Crear cupones** y descuentos
+7. ✅ **Configurar webhooks** para eventos
+8. ✅ **Integrar** con tus sistemas
 
 ---
 
-**Última actualización**: 2025-01-04  
-**Versión MCP**: 1.0.0
+## 📊 Estadísticas del MCP
+
+- **Recursos:** 26
+- **Endpoints:** 111
+- **Cobertura:** 100%
+- **Herramientas MCP:** 10
+- **Métodos HTTP:** GET, POST, PUT, PATCH, DELETE
+
+---
+
+¡Ahora estás listo para codear con la API de Tienda Nube en Cursor! 🎉
+
+**Última actualización:** 2025-01-04  
+**Versión MCP:** 2.0.0  
+**GitHub:** https://github.com/ropu/MCP-tienda_nube

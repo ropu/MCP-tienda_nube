@@ -44,19 +44,14 @@ docker --version
 docker-compose --version
 ```
 
-### 3. Clonar el proyecto
+### 3. Clonar el proyecto desde GitHub
 
 ```bash
-# Crear directorio
-mkdir -p /opt/tiendanube-mcp
-cd /opt/tiendanube-mcp
+# Clonar repositorio
+git clone https://github.com/ropu/MCP-tienda_nube.git
+cd MCP-tienda_nube
 
-# Clonar o descargar los archivos
-# Opción A: Si tienes un repositorio Git
-git clone https://tu_repo/tiendanube-mcp.git .
-
-# Opción B: Si descargas los archivos
-# Copia todos los archivos del proyecto a /opt/tiendanube-mcp/
+# Los archivos ya están listos para usar
 ```
 
 ### 4. Configurar permisos

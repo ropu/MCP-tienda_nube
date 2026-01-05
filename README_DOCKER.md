@@ -7,8 +7,9 @@ Servidor HTTP FastAPI que expone el MCP de Tienda Nube como una API REST, listo 
 ### Opción 1: Usando el script de deployment
 
 ```bash
-# Clonar o descargar el proyecto
-cd tiendanube_mcp
+# Clonar el repositorio desde GitHub
+git clone https://github.com/ropu/MCP-tienda_nube.git
+cd MCP-tienda_nube
 
 # Construir imagen
 ./deploy.sh build

@@ -31,20 +31,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Crear usuario no-root
 RUN useradd -m -u 1000 appuser
 
-# Copiar wheels del builder
-COPY --from=builder /app/wheels /app/wheels
-
 # Copiar requirements
 COPY requirements.txt .
 
-# Instalar dependencias Python
-RUN pip install --no-cache /app/wheels/* && \
-    rm -rf /app/wheels
+# Instalar dependencias Python directamente (permite resolver conflictos)
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copiar código de la aplicación
 COPY server_simple.py .
+COPY server.py .
 COPY app.py .
+COPY app_complete.py .
 COPY api_database.json .
+COPY api_database_complete.json .
 
 # Cambiar propietario de archivos
 RUN chown -R appuser:appuser /app
@@ -59,5 +58,5 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
-# Comando de inicio
-CMD ["python", "-m", "uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
+# Comando de inicio (usar app_complete.py que tiene todos los endpoints)
+CMD ["python", "app_complete.py"]

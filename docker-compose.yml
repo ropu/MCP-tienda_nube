@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  # Servidor MCP FastAPI
+  # Servidor MCP HTTP (FastAPI) - Expone MCP vía HTTP
   mcp-server:
     build:
       context: .
@@ -14,6 +14,7 @@ services:
       - LOG_LEVEL=info
     volumes:
       - ./api_database.json:/app/api_database.json:ro
+      - ./api_database_complete.json:/app/api_database_complete.json:ro
       - ./logs:/app/logs
     restart: unless-stopped
     networks:
@@ -25,10 +26,12 @@ services:
       retries: 3
       start_period: 5s
     labels:
-      - "com.tiendanube.description=Tienda Nube API MCP Server"
-      - "com.tiendanube.version=1.0.0"
+      - "com.tiendanube.description=Tienda Nube MCP Server (HTTP)"
+      - "com.tiendanube.version=2.0.0"
+    # Usar app_complete.py que tiene todos los endpoints
+    command: ["python", "app_complete.py"]
 
-  # Nginx Reverse Proxy
+  # Nginx Reverse Proxy (Opcional - para producción)
   nginx:
     image: nginx:alpine
     container_name: tiendanube-mcp-nginx

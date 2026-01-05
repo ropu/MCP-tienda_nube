@@ -19,17 +19,23 @@ cd MCP-tienda_nube
 pip3 install -r requirements.txt
 ```
 
-### Paso 3: Iniciar el Servidor
+### Paso 3: Verificar Instalación
 
+El servidor MCP (`server.py`) se ejecuta automáticamente cuando Cursor lo invoca. No necesitas iniciarlo manualmente.
+
+**Nota:** Si quieres probar el servidor HTTP REST opcional (no necesario para MCP en Cursor):
 ```bash
 python3 app_complete.py
 ```
-
-El servidor estará disponible en: `http://localhost:8000`
+Este servidor HTTP estará disponible en: `http://localhost:8000` (solo para pruebas, no es necesario para MCP)
 
 ---
 
 ## 🐳 Opción Docker (Recomendado)
+
+Ejecuta el servidor MCP en Docker. El contenedor expone:
+- **Servidor HTTP REST** (puerto 8000) - para pruebas y uso directo
+- **Servidor MCP** (`server.py`) - para Cursor vía stdio
 
 ### 1. Clonar Repositorio
 
@@ -44,10 +50,21 @@ cd MCP-tienda_nube
 docker-compose up -d
 ```
 
+Esto iniciará:
+- **mcp-server**: Contenedor con ambos servidores (HTTP + MCP)
+- **nginx**: Reverse proxy opcional (puertos 80/443) - solo si lo necesitas
+
 ### 3. Verificar
 
 ```bash
+# Verificar que el contenedor está corriendo
+docker-compose ps
+
+# Verificar servidor HTTP (opcional, para pruebas)
 curl http://localhost:8000/health
+
+# Verificar que server.py está disponible en el contenedor
+docker exec tiendanube-mcp-server ls -la /app/server.py
 ```
 
 ---
@@ -68,17 +85,51 @@ notepad %APPDATA%\Cursor\mcp.json
 
 ### 2. Agregar Configuración
 
+Usamos **FastAPI-MCP** que expone automáticamente el protocolo MCP en `/mcp`. Configura según donde esté corriendo:
+
+#### Opción A: Docker Local
+
 ```json
 {
   "mcpServers": {
     "tiendanube-api": {
-      "url": "http://localhost:8000",
-      "name": "Tienda Nube API",
-      "description": "API completa de Tienda Nube"
+      "type": "streamable-http",
+      "url": "http://localhost:8000/mcp"
     }
   }
 }
 ```
+
+#### Opción B: VPS o Servidor Remoto
+
+```json
+{
+  "mcpServers": {
+    "tiendanube-api": {
+      "type": "streamable-http",
+      "url": "http://TU_VPS_IP:8000/mcp"
+    }
+  }
+}
+```
+
+O si tienes un dominio con HTTPS:
+
+```json
+{
+  "mcpServers": {
+    "tiendanube-api": {
+      "type": "streamable-http",
+      "url": "https://tu-dominio.com/mcp"
+    }
+  }
+}
+```
+
+**⚠️ IMPORTANTE:** 
+- El servidor debe estar corriendo: `docker-compose ps`
+- El endpoint `/mcp` debe ser accesible (verifica con `curl http://localhost:8000/mcp`)
+- Si está en una VPS, verifica que el puerto 8000 esté abierto en el firewall
 
 ### 3. Reiniciar Cursor
 
@@ -221,14 +272,58 @@ python3 test_complete_mcp.py
    lsof -i :8000
    ```
 
+### El MCP se queda en "Loading tools" en Cursor
+
+**Problema:** Cursor muestra "Loading tools" pero nunca termina de cargar.
+
+**Causa:** Esto sucede cuando:
+1. Usas `"url"` en `mcp.json` - Cursor NO soporta MCP vía HTTP directamente
+2. El servidor MCP no está accesible o no responde correctamente
+3. Falta la librería `mcp` en el contenedor
+
+**Solución:**
+
+1. **Verifica que usas `command` y `args`, NO `url`:**
+   ```json
+   {
+     "mcpServers": {
+       "tiendanube-api": {
+         "command": "docker",
+         "args": ["exec", "-i", "tiendanube-mcp-server", "python3", "/app/server.py"]
+       }
+     }
+   }
+   ```
+
+2. **Verifica que el contenedor está corriendo:**
+   ```bash
+   docker-compose ps
+   docker exec tiendanube-mcp-server python3 /app/server.py --help
+   ```
+
+3. **Verifica que la librería MCP está instalada:**
+   ```bash
+   docker exec tiendanube-mcp-server pip list | grep mcp
+   ```
+   Si no está, reinstala:
+   ```bash
+   docker-compose down
+   docker-compose build --no-cache
+   docker-compose up -d
+   ```
+
+4. **Reinicia Cursor completamente** (cierra todas las ventanas)
+
+5. **Revisa los logs de Cursor** para ver errores específicos
+
 ### El MCP no aparece en Cursor
 
 1. Verifica que el servidor esté corriendo:
    ```bash
-   curl http://localhost:8000/health
+   docker-compose ps
    ```
 
-2. Verifica la configuración en `~/.cursor/mcp.json`
+2. Verifica la configuración en `~/.cursor/mcp.json` - debe usar `command` y `args`, NO `url`
 
 3. Reinicia Cursor completamente
 

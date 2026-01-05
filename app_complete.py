@@ -7,10 +7,12 @@ Expone TODOS los 111 endpoints de la API como herramientas MCP
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi_mcp import FastApiMCP
 import json
 import logging
 from datetime import datetime
 from typing import Optional, List, Dict, Any
+from pathlib import Path
 
 # Configurar logging
 logging.basicConfig(level=logging.INFO)
@@ -23,20 +25,30 @@ app = FastAPI(
     version="2.0.0"
 )
 
-# Agregar CORS
+# Agregar CORS - IMPORTANTE: Debe estar ANTES de montar FastAPI-MCP
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["*"],  # Incluye GET para SSE
     allow_headers=["*"],
+    expose_headers=["*"],  # Exponer headers para SSE
 )
 
 # Cargar base de datos completa
 try:
-    with open('/home/ubuntu/tiendanube_mcp/api_database_complete.json', 'r') as f:
+    # Intentar cargar desde ruta absoluta (VPS)
+    db_path = Path('/home/ubuntu/tiendanube_mcp/api_database_complete.json')
+    if not db_path.exists():
+        # Si no existe, intentar desde ruta relativa (local/Docker)
+        db_path = Path(__file__).parent / 'api_database_complete.json'
+    if not db_path.exists():
+        # Fallback a api_database.json
+        db_path = Path(__file__).parent / 'api_database.json'
+    
+    with open(db_path, 'r', encoding='utf-8') as f:
         API_DATABASE = json.load(f)
-    logger.info(f"✅ Base de datos completa cargada: {len(API_DATABASE['endpoints'])} recursos")
+    logger.info(f"✅ Base de datos cargada: {len(API_DATABASE.get('endpoints', {}))} recursos")
 except Exception as e:
     logger.error(f"❌ Error cargando base de datos: {e}")
     API_DATABASE = {"endpoints": {}, "metadata": {}}
@@ -77,7 +89,7 @@ async def info():
 
 # ===== HERRAMIENTAS MCP =====
 
-@app.post("/tools/search_endpoint")
+@app.post("/tools/search_endpoint", operation_id="search_endpoint")
 async def search_endpoint(query: str, resource: Optional[str] = None):
     """Buscar endpoints por nombre, método o path"""
     try:
@@ -109,7 +121,7 @@ async def search_endpoint(query: str, resource: Optional[str] = None):
         logger.error(f"Error en search_endpoint: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/tools/get_endpoint_details")
+@app.post("/tools/get_endpoint_details", operation_id="get_endpoint_details")
 async def get_endpoint_details(path: str, method: str):
     """Obtener detalles completos de un endpoint"""
     try:
@@ -130,7 +142,7 @@ async def get_endpoint_details(path: str, method: str):
         logger.error(f"Error en get_endpoint_details: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/tools/get_schema")
+@app.post("/tools/get_schema", operation_id="get_schema")
 async def get_schema(path: str, method: str):
     """Obtener esquema JSON de solicitud/respuesta"""
     try:
@@ -150,7 +162,7 @@ async def get_schema(path: str, method: str):
         logger.error(f"Error en get_schema: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/tools/search_documentation")
+@app.post("/tools/search_documentation", operation_id="search_documentation")
 async def search_documentation(query: str):
     """Buscar en toda la documentación"""
     try:
@@ -175,7 +187,7 @@ async def search_documentation(query: str):
         logger.error(f"Error en search_documentation: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/tools/get_code_example")
+@app.post("/tools/get_code_example", operation_id="get_code_example")
 async def get_code_example(path: str, method: str, language: str = "python"):
     """Obtener ejemplo de código para un endpoint"""
     try:
@@ -246,7 +258,7 @@ fetch(url, options)
         logger.error(f"Error en get_code_example: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/tools/list_resources")
+@app.post("/tools/list_resources", operation_id="list_resources")
 async def list_resources():
     """Listar todos los recursos disponibles"""
     try:
@@ -274,7 +286,7 @@ async def list_resources():
         logger.error(f"Error en list_resources: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/tools/get_resource_endpoints")
+@app.post("/tools/get_resource_endpoints", operation_id="get_resource_endpoints")
 async def get_resource_endpoints(resource: str):
     """Obtener todos los endpoints de un recurso"""
     try:
@@ -299,7 +311,7 @@ async def get_resource_endpoints(resource: str):
         logger.error(f"Error en get_resource_endpoints: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/tools/get_authentication_info")
+@app.post("/tools/get_authentication_info", operation_id="get_authentication_info")
 async def get_authentication_info():
     """Obtener información de autenticación"""
     return {
@@ -316,7 +328,7 @@ async def get_authentication_info():
         "documentation": "https://tiendanube.github.io/api-documentation/intro"
     }
 
-@app.post("/tools/get_multi_inventory_info")
+@app.post("/tools/get_multi_inventory_info", operation_id="get_multi_inventory_info")
 async def get_multi_inventory_info():
     """Obtener información sobre multi-inventario"""
     return {
@@ -352,10 +364,12 @@ async def root():
         "endpoints": sum(len(e) for e in API_DATABASE['endpoints'].values()),
         "coverage": "100%",
         "documentation": "/docs",
+        "mcp_endpoint": "/mcp",
         "endpoints": {
             "health": "/health",
             "ready": "/ready",
-            "info": "/info"
+            "info": "/info",
+            "mcp": "/mcp"
         }
     }
 
@@ -367,6 +381,34 @@ async def http_exception_handler(request, exc):
         status_code=exc.status_code,
         content={"error": exc.detail}
     )
+
+# ===== MONTAR FASTAPI-MCP AL FINAL =====
+# Importante: Montar después de definir todos los endpoints
+try:
+    # Lista de operation_ids que queremos exponer como herramientas MCP
+    tool_operations = [
+        "search_endpoint",
+        "get_endpoint_details",
+        "get_schema",
+        "search_documentation",
+        "get_code_example",
+        "list_resources",
+        "get_resource_endpoints",
+        "get_authentication_info",
+        "get_multi_inventory_info"
+    ]
+    
+    mcp = FastApiMCP(
+        app,
+        include_operations=tool_operations,  # Incluir solo estos operation_ids como herramientas
+        describe_full_response_schema=True  # Incluir esquema completo en descripciones
+    )
+    mcp.mount_http(mount_path="/mcp")  # Monta el servidor MCP con HTTP para streamable-http
+    logger.info(f"✅ FastAPI-MCP montado en /mcp con HTTP y {len(tool_operations)} herramientas")
+except Exception as e:
+    logger.warning(f"⚠️ No se pudo montar FastAPI-MCP: {e}. Continuando sin MCP HTTP...")
+    import traceback
+    logger.error(traceback.format_exc())
 
 if __name__ == "__main__":
     import uvicorn

@@ -9,7 +9,7 @@ services:
     container_name: tiendanube-mcp-server
     # Exponer solo en localhost con puerto alternativo para evitar conflictos
     ports:
-      - "127.0.0.1:8001:8000"
+      - "127.0.0.1:8011:8000"
     environment:
       - PYTHONUNBUFFERED=1
       - LOG_LEVEL=info

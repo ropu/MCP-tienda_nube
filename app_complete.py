@@ -351,6 +351,46 @@ async def get_multi_inventory_info():
         "documentation": "https://tiendanube.github.io/api-documentation/guides/multi-inventory/products"
     }
 
+# ===== ENDPOINTS DE DESCUBRIMIENTO =====
+
+@app.get("/.well-known/mcp")
+async def well_known_mcp():
+    """
+    Endpoint de descubrimiento MCP (.well-known/mcp)
+    Permite que los clientes MCP descubran automáticamente la configuración del servidor
+    """
+    return {
+        "version": "1.0",
+        "provider": {
+            "id": "tiendanube",
+            "name": "Tienda Nube MCP",
+            "description": "MCP endpoint exposing the full Tienda Nube API: products, orders, customers, categories, webhooks and store configuration.",
+            "endpoint": "https://tiendanube.mcp-ropu.com/mcp",
+            "docs": "https://tiendanube.mcp-ropu.com/docs",
+            "owner": "Ropu",
+            "tags": ["ecommerce", "tiendanube", "store", "orders", "products"]
+        }
+    }
+
+@app.get("/.well-known/ai-plugin.json")
+async def ai_plugin_json():
+    """
+    Endpoint de descubrimiento para AI plugins (.well-known/ai-plugin.json)
+    Permite que asistentes de IA descubran y usen el servidor MCP
+    """
+    return {
+        "schema_version": "v1",
+        "name_for_human": "Tienda Nube MCP",
+        "name_for_model": "tiendanube_mcp",
+        "description_for_human": "Access Tienda Nube ecommerce API via MCP.",
+        "description_for_model": "MCP interface for Tienda Nube API including products, orders, customers, categories and store configuration.",
+        "api": {
+            "type": "mcp",
+            "url": "https://tiendanube.mcp-ropu.com/mcp"
+        },
+        "documentation_url": "https://tiendanube.mcp-ropu.com/docs"
+    }
+
 # ===== ENDPOINT RAÍZ =====
 
 @app.get("/")
